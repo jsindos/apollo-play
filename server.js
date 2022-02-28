@@ -1,0 +1,87 @@
+const express = require('express')
+const path = require('path')
+const app = express()
+const { ApolloServer } = require('apollo-server-express')
+const { makeExecutableSchema } = require('graphql-tools')
+
+// the __dirname is the current directory from where the script is running
+app.use(express.static(path.join(__dirname, '/dist')))
+
+app.get('/', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'index.html'))
+})
+
+const port = process.env.PORT || 8081
+const hostname = '0.0.0.0'
+
+const typeDefs = [`
+  type Query {
+    session: Session
+  }
+
+  type Session {
+    bag: Bag
+  }
+
+  type Bag {
+    id: Int
+    products: [Product]
+  }
+
+  type Product {
+    id: Int
+  }
+
+  type Mutation {
+    upsertProduct(product: ProductInput!): Product
+  }
+
+  input ProductInput {
+    id: Int
+  }
+`]
+
+const resolvers = {
+  Query: {
+    session () {}
+  },
+  Mutation: {
+    async upsertProduct (root, args) {
+      const { product: { id } } = args
+      return { id }
+    }
+  }
+}
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers
+})
+
+const origin = function (origin, callback) {
+  return callback(null, true)
+}
+
+async function serve () {
+  const server = new ApolloServer({
+    schema,
+    formatError: (e) => {
+      console.error(JSON.stringify(e, null, 2))
+      return e
+    }
+  })
+
+  await server.start()
+
+  // https://stackoverflow.com/questions/54485239/apollo-server-express-cors-issue
+  server.applyMiddleware({
+    app,
+    cors: { credentials: true, origin }
+  })
+
+  await new Promise(resolve => app.listen(port, hostname, resolve))
+  console.log(`Server running at http://${hostname}:${port}/`)
+  console.log(`graphql running at http://${hostname}:${port}${server.graphqlPath}`)
+}
+
+serve()

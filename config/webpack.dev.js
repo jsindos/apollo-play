@@ -15,7 +15,7 @@ module.exports = merge(common, {
     open: true,
     compress: true,
     hot: true,
-    port: 8080,
+    port: 8080
   },
 
   module: {
@@ -27,12 +27,12 @@ module.exports = merge(common, {
           'style-loader',
           {
             loader: 'css-loader',
-            options: { sourceMap: true, importLoaders: 1, modules: false },
+            options: { sourceMap: true, importLoaders: 1, modules: false }
           },
           { loader: 'postcss-loader', options: { sourceMap: true } },
-          { loader: 'sass-loader', options: { sourceMap: true } },
-        ],
-      },
-    ],
-  },
+          { loader: 'sass-loader', options: { sourceMap: true } }
+        ]
+      }
+    ]
+  }
 })

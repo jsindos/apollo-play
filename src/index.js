@@ -1,26 +1,68 @@
-// Test import of a JavaScript module
-import { example } from '@/js/example'
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { ApolloClient, InMemoryCache, ApolloProvider, gql, useMutation } from '@apollo/client'
 
-// Test import of an asset
-import webpackLogo from '@/images/webpack-logo.svg'
+const client = new ApolloClient({
+  uri: 'http://localhost:8081/graphql',
+  cache: new InMemoryCache({
+    typePolicies: {
+      Maker: {
+        fields: {
+          products: {
+            // update cache in withUpsertProduct is always run, leading to duplicates
+            // merge (existing, incoming) {
+            //   console.log('existing', JSON.stringify(existing, null, 2))
+            //   console.log('incoming', JSON.stringify(incoming, null, 2))
+            //   if (incoming.filter(p => p.id === incoming[incoming.length - 1].id).length > 1) return existing
+            //   return incoming
+            // }
+          }
+        }
+      }
+    }
+  })
+})
 
-// Test import of styles
-import '@/styles/index.scss'
+const UpsertProduct = gql`
+  mutation UpsertProduct($product: ProductInput!) {
+    upsertProduct(product: $product) {
+      id
+    }
+  }
+`
 
-// Appending to the DOM
-const logo = document.createElement('img')
-logo.src = webpackLogo
+const App = () => {
+  const [upsertProductMutation] = useMutation(UpsertProduct)
 
-const heading = document.createElement('h1')
-heading.textContent = example()
+  const onClick = async () => {
+    const { data: { upsertProduct } } = await upsertProductMutation({
+      variables: {
+        product: {
+          id: 1
+        }
+      }
+      // update: (cache, mutationResult) => {
+      //   cache.modify({
+      //     id: `${maker.__typename}:${maker.id}`,
+      //     fields: {
+      //       products: previous => [...previous, mutationResult.data.upsertProduct]
+      //     }
+      //   })
+      // }
+    })
+  }
 
-// Test a background image url in CSS
-const imageBackground = document.createElement('div')
-imageBackground.classList.add('image')
+  return (
+    <div onClick={onClick} style={{ border: '1px solid #222' }}>
+      Press me
+    </div>
+  )
+}
 
-// Test a public folder asset
-const imagePublic = document.createElement('img')
-imagePublic.src = '/assets/example.png'
-
-const app = document.querySelector('#root')
-app.append(logo, heading, imageBackground, imagePublic)
+const wrapper = document.getElementById('root')
+ReactDOM.render(
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>,
+  wrapper
+)
