@@ -1,21 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { ApolloClient, InMemoryCache, ApolloProvider, gql, useMutation } from '@apollo/client'
+import { ApolloClient, InMemoryCache, ApolloProvider, gql, useMutation, useQuery } from '@apollo/client'
 
 const client = new ApolloClient({
   uri: 'http://localhost:8081/graphql',
   cache: new InMemoryCache({
     typePolicies: {
-      Maker: {
+      Session: {
         fields: {
           products: {
-            // update cache in withUpsertProduct is always run, leading to duplicates
-            // merge (existing, incoming) {
-            //   console.log('existing', JSON.stringify(existing, null, 2))
-            //   console.log('incoming', JSON.stringify(incoming, null, 2))
-            //   if (incoming.filter(p => p.id === incoming[incoming.length - 1].id).length > 1) return existing
-            //   return incoming
-            // }
+            merge (existing, incoming) {
+              // this is only being called on useQuery(HydrateSession), not useMutation(UpsertProduct)
+              console.log('existing', JSON.stringify(existing, null, 2))
+              console.log('incoming', JSON.stringify(incoming, null, 2))
+              // remove duplicates when latestProduct has the same id as an existing product — [..., latestProduct]
+              if (incoming.filter(p => p.id === incoming[incoming.length - 1].id).length > 1) return existing
+              return incoming
+            }
           }
         }
       }
@@ -31,30 +32,42 @@ const UpsertProduct = gql`
   }
 `
 
+const HydrateSession = gql`
+  query {
+    session {
+      id
+      products {
+        id
+      }
+    }
+  }
+`
+
 const App = () => {
+  useQuery(HydrateSession)
   const [upsertProductMutation] = useMutation(UpsertProduct)
 
   const onClick = async () => {
-    const { data: { upsertProduct } } = await upsertProductMutation({
+    await upsertProductMutation({
       variables: {
         product: {
-          id: 1
+          id: 2
         }
+      },
+      update: (cache, mutationResult) => {
+        cache.modify({
+          id: 'Session:1',
+          fields: {
+            products: previous => [...previous, mutationResult.data.upsertProduct]
+          }
+        })
       }
-      // update: (cache, mutationResult) => {
-      //   cache.modify({
-      //     id: `${maker.__typename}:${maker.id}`,
-      //     fields: {
-      //       products: previous => [...previous, mutationResult.data.upsertProduct]
-      //     }
-      //   })
-      // }
     })
   }
 
   return (
-    <div onClick={onClick} style={{ border: '1px solid #222' }}>
-      Press me
+    <div onClick={onClick} style={{ border: '1px solid #222', cursor: 'pointer', padding: '10px' }}>
+      Upsert product with id 2
     </div>
   )
 }

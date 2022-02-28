@@ -1,15 +1,7 @@
 const express = require('express')
-const path = require('path')
 const app = express()
 const { ApolloServer } = require('apollo-server-express')
 const { makeExecutableSchema } = require('graphql-tools')
-
-// the __dirname is the current directory from where the script is running
-app.use(express.static(path.join(__dirname, '/dist')))
-
-app.get('/', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'index.html'))
-})
 
 const port = process.env.PORT || 8081
 const hostname = '0.0.0.0'
@@ -20,10 +12,6 @@ const typeDefs = [`
   }
 
   type Session {
-    bag: Bag
-  }
-
-  type Bag {
     id: Int
     products: [Product]
   }
@@ -43,7 +31,12 @@ const typeDefs = [`
 
 const resolvers = {
   Query: {
-    session () {}
+    session () {
+      return {
+        id: 1,
+        products: [{ id: 1 }]
+      }
+    }
   },
   Mutation: {
     async upsertProduct (root, args) {
