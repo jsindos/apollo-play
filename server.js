@@ -12,8 +12,7 @@ const typeDefs = [`
   }
 
   type Session {
-    id: Int
-    products: [Product]
+    products(isDecrementingInventory: Boolean): [Product]
   }
 
   type Product {
@@ -29,19 +28,25 @@ const typeDefs = [`
   }
 `]
 
+let id = 1
+
 const resolvers = {
   Query: {
     session () {
-      return {
-        id: 1,
-        products: [{ id: 1 }]
-      }
+      return {}
     }
   },
   Mutation: {
     async upsertProduct (root, args) {
       const { product: { id } } = args
       return { id }
+    }
+  },
+  Session: {
+    products () {
+      const products = [{ id }]
+      id++
+      return products
     }
   }
 }
