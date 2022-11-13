@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client'
 import ConnectionDirective from './examples/1.ConnectionDirective'
+import LoadingState from './examples/2.LoadingState'
+import ReactivePagesInViewHierarchy from './examples/3.ReactivePagesInViewHierarchy'
 
 const client = new ApolloClient({
   uri: 'http://localhost:8081/graphql',
@@ -28,7 +30,9 @@ const client = new ApolloClient({
 })
 
 const routes = {
-  ConnectionDirective: ConnectionDirective
+  ConnectionDirective: ConnectionDirective,
+  LoadingState: LoadingState,
+  ReactivePagesInViewHierarchy: ReactivePagesInViewHierarchy
 }
 
 const App = () => {

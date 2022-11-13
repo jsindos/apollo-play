@@ -13,14 +13,23 @@ const typeDefs = [`
 
   type Session {
     products(isDecrementingInventory: Boolean): [Product]
+    authenticatedUser: User
   }
 
   type Product {
     id: Int
   }
 
+  type User {
+    id: Int
+    username: String
+    firstName: String
+  }
+
   type Mutation {
     upsertProduct(product: ProductInput!): Product
+    login: Session
+    logout: Session
   }
 
   input ProductInput {
@@ -30,6 +39,9 @@ const typeDefs = [`
 
 let id = 1
 
+const user = { id: 1, username: 'jt', firstName: 'Joe' }
+let isAuthenticated = false
+
 const resolvers = {
   Query: {
     session () {
@@ -37,9 +49,17 @@ const resolvers = {
     }
   },
   Mutation: {
-    async upsertProduct (root, args) {
+    upsertProduct (root, args) {
       const { product: { id } } = args
       return { id }
+    },
+    login () {
+      isAuthenticated = true
+      return {}
+    },
+    logout () {
+      isAuthenticated = false
+      return {}
     }
   },
   Session: {
@@ -47,6 +67,9 @@ const resolvers = {
       const products = [{ id }]
       id++
       return products
+    },
+    authenticatedUser () {
+      return isAuthenticated ? user : null
     }
   }
 }
